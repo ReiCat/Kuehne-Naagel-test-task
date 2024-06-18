@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 
-from api.models import Shipment
-from api.serializers.ShipmentSerializer import ShipmentSerializer
+from project.api.models import Shipment
+from project.api.serializers.ShipmentSerializer import ShipmentSerializer
 
 
 class ShipmentViewSet(viewsets.ModelViewSet):

@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer
 
-from api.models import Shipment
+from project.api.models import Shipment
 
 
 class ShipmentSerializer(ModelSerializer):
