@@ -9,12 +9,14 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Alert from "react-bootstrap/Alert";
+import { useNavigate } from "react-router-dom";
 
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { updateShipment } from "../services/apiSource";
 import ShipmentEditClass from "./data/ShipmentEditClass";
 import { getCountries } from "../services/countries";
+import { LINK_PATHS } from "../constants/paths";
 import ShipmentClass from "./data/ShipmentClass";
 
 interface ShipmentEditFormProps {
@@ -28,6 +30,7 @@ const ShipmentEditForm: FunctionComponent<ShipmentEditFormProps> = (
   const [fromCountryID, setFromCountryID] = useState<number>(0);
   const [toCountryID, setToCountryID] = useState<number>(0);
   const [countryOptions, setCountryOptions] = useState<any>([]);
+  const navigate = useNavigate();
   const [countries, setCountries] = useState<{
     [code: string]: string | undefined;
   }>({});
@@ -82,7 +85,7 @@ const ShipmentEditForm: FunctionComponent<ShipmentEditFormProps> = (
 
       updateShipment(newShipment.id, newShipment)
         .then((editedShipment: any) => {
-          window.location.reload();
+          navigate(`${LINK_PATHS.homePage}`);
         })
         .catch((err) => {
           setError(err);
