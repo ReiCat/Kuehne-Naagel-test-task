@@ -12,19 +12,24 @@ import { LINK_PATHS } from "../constants/paths";
 import { fetchShipment } from "../services/apiSource";
 import ShipmentClass from "../components/data/ShipmentClass";
 import { getCountries } from "../services/countries";
+import ShipmentEditForm from "../components/ShipmentEditForm";
 
 interface ShipmentDetailsProps {}
 
 const ShipmentDetails: React.FC<ShipmentDetailsProps> = (
   props: ShipmentDetailsProps
 ): JSX.Element => {
+  const [show, setShow] = useState(false);
   let { shipmentID } = useParams();
   const [error, setError] = useState<string | undefined>("");
 
-  const [shipment, setShipment] = useState<ShipmentClass | undefined>();
+  const [shipment, setShipment] = useState<ShipmentClass>();
   const [countries, setCountries] = useState<{
     [code: string]: string | undefined;
   }>({});
+
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
 
   useEffect(() => {
     fetchShipment(Number(shipmentID))
@@ -59,6 +64,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = (
               <th>Price</th>
               <th>Country from</th>
               <th>Country to</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -70,6 +76,13 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = (
               <td>{shipment.price}</td>
               <td>{countries[shipment.from_country_code]}</td>
               <td>{countries[shipment.to_country_code]}</td>
+              <td>
+                <div className="d-flex justify-content-end mt-3">
+                  <Button variant="primary" onClick={handleShow}>
+                    Edit shipment
+                  </Button>
+                </div>
+              </td>
             </tr>
           </tbody>
         </Table>
@@ -78,6 +91,20 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = (
           <b>No shipment found</b>
         </Alert>
       )}
+
+      <Modal show={show} onHide={handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add shipment</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <ShipmentEditForm shipment={shipment!}></ShipmentEditForm>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {error !== "" && error !== undefined ? (
         <Alert className="mt-3">
