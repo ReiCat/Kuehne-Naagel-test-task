@@ -63,8 +63,6 @@ const ShipmentAddForm: FunctionComponent<ShipmentAddFormProps> = (
       newShipment.from_country_code = countryOptions[fromCountryID].key;
       newShipment.to_country_code = countryOptions[toCountryID].key;
 
-      console.log("onsubmit", newShipment);
-
       addShipment(newShipment)
         .then((addedShipment: any) => {
           navigate(`${LINK_PATHS.shipments}/${addedShipment.data.id}`);
