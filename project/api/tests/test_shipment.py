@@ -10,7 +10,8 @@ class ShipmentTestCase(APITestCase):
         resp = self.client.get("/api/shipments", format="json")
 
         # Assert
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 0)
 
     def test_add_shipment_returns_error_in_case_of_wrong_data_arranged(self):
         # Arrange
