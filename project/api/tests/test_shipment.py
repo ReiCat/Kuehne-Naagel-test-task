@@ -1,5 +1,3 @@
-import ujson
-
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -9,7 +7,7 @@ class ShipmentTestCase(APITestCase):
 
     def test_get_shipments_returns_error_in_case_if_no_records_found(self):
         # Act
-        resp = self.client.get("/api/shipments/", format="json")
+        resp = self.client.get("/api/shipments", format="json")
 
         # Assert
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
