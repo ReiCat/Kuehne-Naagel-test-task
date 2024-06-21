@@ -162,6 +162,7 @@ class ShipmentTestCase(APITestCase):
         )
         added_shipment = dict(resp.data)
 
+        # Assert
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(added_shipment["name"], new_data["name"])
         self.assertEqual(added_shipment["order_date"], new_data["order_date"])
@@ -171,3 +172,35 @@ class ShipmentTestCase(APITestCase):
             added_shipment["from_country_code"], new_data["from_country_code"]
         )
         self.assertEqual(added_shipment["to_country_code"], new_data["to_country_code"])
+
+    def test_delete_shipment_returns_result_in_case_of_success(self):
+        # Arrange
+        data = {
+            "name": "asd",
+            "order_date": "2024-12-12",
+            "pickup_date": "2024-12-13",
+            "price": 555,
+            "from_country_code": "ET",
+            "to_country_code": "ES",
+        }
+
+        resp = self.client.post("/api/shipments", data)
+        added_shipment = dict(resp.data)
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(added_shipment["name"], data["name"])
+        self.assertEqual(added_shipment["order_date"], data["order_date"])
+        self.assertEqual(added_shipment["pickup_date"], data["pickup_date"])
+        self.assertEqual(added_shipment["price"], data["price"])
+        self.assertEqual(added_shipment["from_country_code"], data["from_country_code"])
+        self.assertEqual(added_shipment["to_country_code"], data["to_country_code"])
+
+        # Act
+        resp = self.client.delete(
+            "/api/shipments/{added_shipment_id}".format(
+                added_shipment_id=added_shipment["id"]
+            )
+        )
+
+        # Assert
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
