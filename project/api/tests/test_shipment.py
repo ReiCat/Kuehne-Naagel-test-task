@@ -1,21 +1,34 @@
+from django.forms.models import model_to_dict
+from mixer.backend.django import Mixer
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APIClient, APITestCase
+
+from project.api.models import Shipment
 
 
 class ShipmentTestCase(APITestCase):
-    client = APIClient()
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.mixer = Mixer(commit=False)
 
-    def test_get_shipments_returns_error_in_case_if_no_records_found(self):
-        # Act
+        self.datefmt = "%Y-%m-%d"
+
+        return super().setUp()
+
+    def tearDown(self) -> None:
+        return super().tearDown()
+
+    def test_get_shipments_returns_empty_list_in_case_if_no_records_found(self):
         resp = self.client.get("/api/shipments", format="json")
 
-        # Assert
+        self.assertTrue(isinstance(resp, Response))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(isinstance(resp.data, list))
         self.assertEqual(len(resp.data), 0)
 
-    def test_add_shipment_returns_error_in_case_of_wrong_data_arranged(self):
-        # Arrange
-        data = {
+    def test_add_shipment_returns_error_in_case_of_wrong_data_specified(self):
+        test_data = {
             "name": "",
             "order_date": "",
             "pickup_date": "",
@@ -24,10 +37,8 @@ class ShipmentTestCase(APITestCase):
             "to_country_code": "",
         }
 
-        # Act
-        resp = self.client.post("/api/shipments", data, format="json")
+        resp = self.client.post("/api/shipments", test_data, format="json")
 
-        # Assert
         self.assertEqual(resp.data["name"][0], "This field may not be blank.")
         self.assertEqual(
             resp.data["order_date"][0],
@@ -47,159 +58,225 @@ class ShipmentTestCase(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_add_shipment_returns_result_in_case_of_success(self):
-        # Arrange
-        data = {
-            "name": "asd",
-            "order_date": "2024-12-12",
-            "pickup_date": "2024-12-13",
-            "price": 555,
-            "from_country_code": "ET",
-            "to_country_code": "ES",
-        }
+        test_shipment_model = self.mixer.blend(Shipment)
+        test_data = model_to_dict(test_shipment_model)
 
-        resp = self.client.post("/api/shipments", data)
+        resp = self.client.post("/api/shipments", test_data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
         added_shipment = dict(resp.data)
 
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(added_shipment["name"], data["name"])
-        self.assertEqual(added_shipment["order_date"], data["order_date"])
-        self.assertEqual(added_shipment["pickup_date"], data["pickup_date"])
-        self.assertEqual(added_shipment["price"], data["price"])
-        self.assertEqual(added_shipment["from_country_code"], data["from_country_code"])
-        self.assertEqual(added_shipment["to_country_code"], data["to_country_code"])
+        self.assertEqual(added_shipment["name"], test_data["name"])
+        self.assertEqual(
+            added_shipment["order_date"], test_data["order_date"].strftime(self.datefmt)
+        )
+        self.assertEqual(
+            added_shipment["pickup_date"],
+            test_data["pickup_date"].strftime(self.datefmt),
+        )
+        self.assertEqual(added_shipment["price"], test_data["price"])
+        self.assertEqual(
+            added_shipment["from_country_code"], test_data["from_country_code"]
+        )
+        self.assertEqual(
+            added_shipment["to_country_code"], test_data["to_country_code"]
+        )
 
-        # Act
         resp = self.client.get("/api/shipments", format="json")
 
-        # Assert
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 1)
         shipment = resp.data[0]
-        self.assertEqual(shipment["name"], data["name"])
-        self.assertEqual(shipment["order_date"], data["order_date"])
-        self.assertEqual(shipment["pickup_date"], data["pickup_date"])
-        self.assertEqual(shipment["price"], data["price"])
-        self.assertEqual(shipment["from_country_code"], data["from_country_code"])
-        self.assertEqual(shipment["to_country_code"], data["to_country_code"])
+        self.assertEqual(shipment["name"], test_data["name"])
+        self.assertEqual(
+            shipment["order_date"], test_data["order_date"].strftime(self.datefmt)
+        )
+        self.assertEqual(
+            shipment["pickup_date"], test_data["pickup_date"].strftime(self.datefmt)
+        )
+        self.assertEqual(shipment["price"], test_data["price"])
+        self.assertEqual(shipment["from_country_code"], test_data["from_country_code"])
+        self.assertEqual(shipment["to_country_code"], test_data["to_country_code"])
+
+    def test_get_shipment_by_id_returns_not_found_in_case_of_shipment_by_id_does_not_exist(
+        self,
+    ):
+        resp = self.client.get("/api/shipments/5", format="json")
+
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(resp.data["detail"], "No Shipment matches the given query.")
 
     def test_get_shipment_by_id_returns_result_in_case_of_success(self):
-        # Arrange
-        data = {
-            "name": "asd",
-            "order_date": "2024-12-12",
-            "pickup_date": "2024-12-13",
-            "price": 555,
-            "from_country_code": "ET",
-            "to_country_code": "ES",
-        }
+        test_shipment_model = self.mixer.blend(Shipment)
+        test_data = model_to_dict(test_shipment_model)
 
-        resp = self.client.post("/api/shipments", data)
+        resp = self.client.post("/api/shipments", test_data)
         added_shipment = dict(resp.data)
 
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(added_shipment["name"], data["name"])
-        self.assertEqual(added_shipment["order_date"], data["order_date"])
-        self.assertEqual(added_shipment["pickup_date"], data["pickup_date"])
-        self.assertEqual(added_shipment["price"], data["price"])
-        self.assertEqual(added_shipment["from_country_code"], data["from_country_code"])
-        self.assertEqual(added_shipment["to_country_code"], data["to_country_code"])
+        self.assertEqual(added_shipment["name"], test_data["name"])
+        self.assertEqual(
+            added_shipment["order_date"], test_data["order_date"].strftime(self.datefmt)
+        )
+        self.assertEqual(
+            added_shipment["pickup_date"],
+            test_data["pickup_date"].strftime(self.datefmt),
+        )
+        self.assertEqual(added_shipment["price"], test_data["price"])
+        self.assertEqual(
+            added_shipment["from_country_code"], test_data["from_country_code"]
+        )
+        self.assertEqual(
+            added_shipment["to_country_code"], test_data["to_country_code"]
+        )
 
-        # Act
         resp = self.client.get(
             "/api/shipments/{shipment_id}".format(shipment_id=added_shipment["id"]),
             format="json",
         )
 
-        # Assert
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         shipment = resp.data
-        self.assertEqual(shipment["name"], data["name"])
-        self.assertEqual(shipment["order_date"], data["order_date"])
-        self.assertEqual(shipment["pickup_date"], data["pickup_date"])
-        self.assertEqual(shipment["price"], data["price"])
-        self.assertEqual(shipment["from_country_code"], data["from_country_code"])
-        self.assertEqual(shipment["to_country_code"], data["to_country_code"])
+        self.assertEqual(shipment["name"], test_data["name"])
+        self.assertEqual(
+            shipment["order_date"], test_data["order_date"].strftime(self.datefmt)
+        )
+        self.assertEqual(
+            shipment["pickup_date"], test_data["pickup_date"].strftime(self.datefmt)
+        )
+        self.assertEqual(shipment["price"], test_data["price"])
+        self.assertEqual(shipment["from_country_code"], test_data["from_country_code"])
+        self.assertEqual(shipment["to_country_code"], test_data["to_country_code"])
 
-    def test_update_shipment_returns_result_in_case_of_success(self):
-        # Arrange
-        data = {
-            "name": "asd",
-            "order_date": "2024-12-12",
-            "pickup_date": "2024-12-13",
-            "price": 555,
-            "from_country_code": "ET",
-            "to_country_code": "ES",
-        }
+    def test_partial_update_shipment_returns_result_in_case_of_success(self):
+        test_shipment_model = self.mixer.blend(Shipment)
+        test_data = model_to_dict(test_shipment_model)
 
-        resp = self.client.post("/api/shipments", data)
+        resp = self.client.post("/api/shipments", test_data)
         added_shipment = dict(resp.data)
 
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(added_shipment["name"], data["name"])
-        self.assertEqual(added_shipment["order_date"], data["order_date"])
-        self.assertEqual(added_shipment["pickup_date"], data["pickup_date"])
-        self.assertEqual(added_shipment["price"], data["price"])
-        self.assertEqual(added_shipment["from_country_code"], data["from_country_code"])
-        self.assertEqual(added_shipment["to_country_code"], data["to_country_code"])
+        self.assertEqual(added_shipment["name"], test_data["name"])
+        self.assertEqual(
+            added_shipment["order_date"], test_data["order_date"].strftime(self.datefmt)
+        )
+        self.assertEqual(
+            added_shipment["pickup_date"],
+            test_data["pickup_date"].strftime(self.datefmt),
+        )
+        self.assertEqual(added_shipment["price"], test_data["price"])
+        self.assertEqual(
+            added_shipment["from_country_code"], test_data["from_country_code"]
+        )
+        self.assertEqual(
+            added_shipment["to_country_code"], test_data["to_country_code"]
+        )
 
-        new_data = {
-            "id": added_shipment["id"],
-            "name": "zxc",
-            "order_date": "2024-12-11",
-            "pickup_date": "2024-12-14",
-            "price": 666,
-            "from_country_code": "GB",
-            "to_country_code": "RU",
-        }
+        new_test_data = {"name": "new name", "from_country_code": "NC"}
 
-        # Act
+        resp = self.client.patch(
+            "/api/shipments/{added_shipment_id}".format(
+                added_shipment_id=added_shipment["id"]
+            ),
+            new_test_data,
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        updated_shipment = dict(resp.data)
+
+        self.assertEqual(updated_shipment["name"], new_test_data["name"])
+        self.assertNotEqual(test_data["name"], new_test_data["name"])
+        self.assertEqual(
+            updated_shipment["from_country_code"], new_test_data["from_country_code"]
+        )
+        self.assertNotEqual(
+            test_data["from_country_code"], new_test_data["from_country_code"]
+        )
+
+    def test_update_shipment_returns_result_in_case_of_success(self):
+        test_shipment_model = self.mixer.blend(Shipment)
+        test_data = model_to_dict(test_shipment_model)
+
+        resp = self.client.post("/api/shipments", test_data)
+        added_shipment = dict(resp.data)
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(added_shipment["name"], test_data["name"])
+        self.assertEqual(
+            added_shipment["order_date"], test_data["order_date"].strftime(self.datefmt)
+        )
+        self.assertEqual(
+            added_shipment["pickup_date"],
+            test_data["pickup_date"].strftime(self.datefmt),
+        )
+        self.assertEqual(added_shipment["price"], test_data["price"])
+        self.assertEqual(
+            added_shipment["from_country_code"], test_data["from_country_code"]
+        )
+        self.assertEqual(
+            added_shipment["to_country_code"], test_data["to_country_code"]
+        )
+
+        new_test_shipment_model = self.mixer.blend(Shipment)
+        new_test_data = model_to_dict(new_test_shipment_model)
+
         resp = self.client.put(
             "/api/shipments/{added_shipment_id}".format(
                 added_shipment_id=added_shipment["id"]
             ),
-            new_data,
+            new_test_data,
         )
-        added_shipment = dict(resp.data)
-
-        # Assert
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(added_shipment["name"], new_data["name"])
-        self.assertEqual(added_shipment["order_date"], new_data["order_date"])
-        self.assertEqual(added_shipment["pickup_date"], new_data["pickup_date"])
-        self.assertEqual(added_shipment["price"], new_data["price"])
+
+        updated_shipment = dict(resp.data)
+
+        self.assertEqual(updated_shipment["name"], new_test_data["name"])
         self.assertEqual(
-            added_shipment["from_country_code"], new_data["from_country_code"]
+            updated_shipment["order_date"],
+            new_test_data["order_date"].strftime(self.datefmt),
         )
-        self.assertEqual(added_shipment["to_country_code"], new_data["to_country_code"])
+        self.assertEqual(
+            updated_shipment["pickup_date"],
+            new_test_data["pickup_date"].strftime(self.datefmt),
+        )
+        self.assertEqual(updated_shipment["price"], new_test_data["price"])
+        self.assertEqual(
+            updated_shipment["from_country_code"], new_test_data["from_country_code"]
+        )
+        self.assertEqual(
+            updated_shipment["to_country_code"], new_test_data["to_country_code"]
+        )
 
     def test_delete_shipment_returns_result_in_case_of_success(self):
-        # Arrange
-        data = {
-            "name": "asd",
-            "order_date": "2024-12-12",
-            "pickup_date": "2024-12-13",
-            "price": 555,
-            "from_country_code": "ET",
-            "to_country_code": "ES",
-        }
+        test_shipment_model = self.mixer.blend(Shipment)
+        test_data = model_to_dict(test_shipment_model)
 
-        resp = self.client.post("/api/shipments", data)
-        added_shipment = dict(resp.data)
+        resp = self.client.post("/api/shipments", test_data)
 
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(added_shipment["name"], data["name"])
-        self.assertEqual(added_shipment["order_date"], data["order_date"])
-        self.assertEqual(added_shipment["pickup_date"], data["pickup_date"])
-        self.assertEqual(added_shipment["price"], data["price"])
-        self.assertEqual(added_shipment["from_country_code"], data["from_country_code"])
-        self.assertEqual(added_shipment["to_country_code"], data["to_country_code"])
 
-        # Act
+        added_shipment = dict(resp.data)
+
+        self.assertEqual(added_shipment["name"], test_data["name"])
+        self.assertEqual(
+            added_shipment["order_date"], test_data["order_date"].strftime(self.datefmt)
+        )
+        self.assertEqual(
+            added_shipment["pickup_date"],
+            test_data["pickup_date"].strftime(self.datefmt),
+        )
+        self.assertEqual(added_shipment["price"], test_data["price"])
+        self.assertEqual(
+            added_shipment["from_country_code"], test_data["from_country_code"]
+        )
+        self.assertEqual(
+            added_shipment["to_country_code"], test_data["to_country_code"]
+        )
+
         resp = self.client.delete(
             "/api/shipments/{added_shipment_id}".format(
                 added_shipment_id=added_shipment["id"]
             )
         )
 
-        # Assert
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)

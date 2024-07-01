@@ -6,4 +6,12 @@ from project.api.models import Shipment
 class ShipmentSerializer(ModelSerializer):
     class Meta:
         model = Shipment
-        fields = '__all__'
+        fields = [
+            'id',
+            'name', 
+            'order_date', 
+            'pickup_date', 
+            'price',
+            'from_country_code',
+            'to_country_code'
+        ]

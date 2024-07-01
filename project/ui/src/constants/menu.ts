@@ -5,10 +5,6 @@ export interface menuDataItem {
   name: string;
 }
 
-export const menuData: menuDataItem[] = [
-  // { path: LINK_PATHS.homePage, name: "Home" },
-  // { path: LINK_PATHS.persons, name: "Persons" },
-  // { path: LINK_PATHS.companies, name: "Companies" },
-];
+export const menuData: menuDataItem[] = [];
 
 export default menuData;

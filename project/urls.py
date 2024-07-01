@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -26,34 +27,54 @@ from project.api.views import ShipmentViewSet
 from project.views import index
 
 schema_view = get_schema_view(
-   openapi.Info(
-      title="Kuhne+Naagel test task API",
-      default_version='v1',
-      description="Kuhne+Naagel test task API",
-      terms_of_service="https://www.google.com/policies/terms/",
-      license=openapi.License(name="BSD License"),
-   ),
-   public=True,
-   permission_classes=(permissions.AllowAny,),
+    openapi.Info(
+        title="Kuhne+Naagel test task API",
+        default_version="v1",
+        description="Kuhne+Naagel test task API",
+        terms_of_service="https://www.google.com/policies/terms/",
+        license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
 )
 
 urlpatterns = [
-    path('api/swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('api/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-
-    path('admin/', admin.site.urls),
-    path('api/shipments', ShipmentViewSet.as_view({
-        'get': 'list',
-        'post': 'create',
-    })),
-    path('api/shipments/<int:pk>', ShipmentViewSet.as_view({
-        'get': 'retrieve',
-        'put': 'update',
-        'delete': 'destroy'
-    })),
-    path("", index)
-] 
+    path(
+        "api/swagger<format>/",
+        schema_view.without_ui(cache_timeout=0),
+        name="schema-json",
+    ),
+    path(
+        "api/swagger/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
+    path(
+        "api/redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
+    ),
+    path("admin/", admin.site.urls),
+    path(
+        "api/shipments",
+        ShipmentViewSet.as_view(
+            {
+                "get": "list",
+                "post": "create",
+            }
+        ),
+    ),
+    path(
+        "api/shipments/<int:pk>",
+        ShipmentViewSet.as_view(
+            {
+                "get": "retrieve",
+                "put": "update",
+                "patch": "partial_update",
+                "delete": "destroy",
+            }
+        ),
+    ),
+    path("", index),
+]
 
 if settings.DEBUG:
     urlpatterns + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
